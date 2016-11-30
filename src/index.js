@@ -41,7 +41,7 @@ export default class extends think.middleware.base {
   }
 
   getRelativeFilePath(ext) {
-    let config = this.config('css_preprocess.path');
+    let config = this.config('css-preprocess.path');
     let url = this.http.url;
     let dirs = this.splitPath(url);
     dirs.shift(); // remove 'static'
