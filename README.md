@@ -58,6 +58,8 @@ If `path` is `array[string]` and it's length must be 2. It just use first path t
 For example:
 * `path=['stylus', 'css/index']`, `/static/css/index/index.css` -> `/static/stylus/index.css`
 
+> If you use window, please use `/` not `\\` as sep
+
 ### TODO
 * [ ] support cache in production mode
 * [ ] support compile in compile script

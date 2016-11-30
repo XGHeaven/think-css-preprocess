@@ -25,15 +25,10 @@ export default class extends think.middleware.base {
   }
 
   splitPath(p) {
-    p = p.split(path.sep);
+    p = p.split('/');
     if (p[0] === '') p.shift();
     if (p[p.length-1] === '') p.pop();
     return p;
-  }
-
-  joinPath(p1, p2) {
-    p2.splice(0, p1.length);
-    return '/static/' + p1.join(path.sep) + path.sep + p2.join(path.sep);
   }
 
   arrayHasPrefix(prefix, array) {
@@ -52,18 +47,17 @@ export default class extends think.middleware.base {
     dirs.shift(); // remove 'static'
     if (think.isString(config)) {
       let nDirs = this.splitPath(config);
-      if (nDirs.length < dirs.length) {
-        url = this.joinPath(nDirs, dirs);
-      }
+      // dirs include file, but nDirs not
+      if (nDirs.length < dirs.length)
+        dirs.splice(0, nDirs.length, ...nDirs);
     } else if (think.isArray(config) && config.length === 2) {
       let nDirs = this.splitPath(config[0]);
       let rDirs = this.splitPath(config[1]);
-      if (this.arrayHasPrefix(rDirs, dirs)) {
-        dirs.splice(0, rDirs.length);
-        url = '/static/' + nDirs.join(path.sep) + path.sep + dirs.join(path.sep);
-      }
+      if (this.arrayHasPrefix(rDirs, dirs))
+        dirs.splice(0, rDirs.length, ...nDirs);
     }
-    let pathInfo = path.parse(path.join(think.RESOURCE_PATH, url));
+    dirs.unshift('static');
+    let pathInfo = path.parse(path.join(think.RESOURCE_PATH, ...dirs));
     pathInfo.ext = ext;
     delete pathInfo.base;
     return path.format(pathInfo);
@@ -73,7 +67,7 @@ export default class extends think.middleware.base {
     let url = this.http.url;
     if (path.parse(url).ext !== '.css') {
       // only compiler css file
-      return;
+      return 'not css';
     }
     let oldFilePath = path.join(think.RESOURCE_PATH, url);
     for (let name in this._compilers) {
@@ -88,8 +82,7 @@ export default class extends think.middleware.base {
         let output = await new Promise((resolve, reject) => {
           return compiler
           .renderFile(newFilePath)
-          .catch(err => reject(err))
-          .done(res => resolve(res.result))
+          .done(res => resolve(res.result), err => reject(err))
         });
         await writeFile(oldFilePath, output);
         return;
@@ -99,5 +92,6 @@ export default class extends think.middleware.base {
         return think.prevent();
       }
     }
+    return 'no match';
   }
 }

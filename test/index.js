@@ -14,7 +14,7 @@ think.env = 'testing';
 
 var Class = require('../lib/index.js').default;
 
-var getHttp = function(url, options){
+var getHttp = function(url, options) {
   var req = new http.IncomingMessage();
   req.headers = {
     'host': 'www.thinkjs.org',
@@ -25,13 +25,13 @@ var getHttp = function(url, options){
   req.httpVersion = '1.1';
   req.url = url;
   var res = new http.ServerResponse(req);
-  res.write = function(){
+  res.write = function() {
     return true;
   };
 
-  return think.http(req, res).then(function(http){
-    if(options){
-      for(var key in options){
+  return think.http(req, res).then(function(http) {
+    if(options) {
+      for(var key in options) {
         http[key] = options[key];
       }
     }
@@ -39,21 +39,41 @@ var getHttp = function(url, options){
   })
 };
 
-var execMiddleware = function(url, options){
-  return getHttp(url, options).then(function(http){
+var execMiddleware = function(url, options) {
+  return getHttp(url, options).then(function(http) {
     var instance = new Class(http);
     return instance.run().then(() => http)
   })
 };
 
+var execMiddlewareForResult = function(url, options) {
+  return getHttp(url, options).then(function(http) {
+    var instance = new Class(http);
+    return instance.run()
+  })
+};
 
-describe('think-css-preprocess', function(){
-  it('compile stylus', function(done){
-    Promise.resolve().then(function(){
+describe('default compile', function() {
+  it('compile stylus', function(done) {
+    Promise.resolve().then(function() {
       execMiddleware('/static/stylus/index.css').then(function(http) {
         assert.ok(think.isFile(think.RESOURCE_PATH + 'static/stylus/index.css'));
         done();
       }).catch(err => done(err));
+    });
+  });
+
+  it('not css file', function(done) {
+    execMiddlewareForResult('/static/img/index.png').then(function(result) {
+      assert.equal(result, 'not css');
+      done();
+    });
+  });
+
+  it('no match file to compile', function(done) {
+    execMiddlewareForResult('/static/css/index.css').then(function(result) {
+      assert.equal(result, 'no match');
+      done();
     });
   });
 
@@ -101,5 +121,18 @@ describe('compile css file in different path through set config', function() {
 
   afterEach(function() {
     rimraf.sync(think.RESOURCE_PATH + 'static/**/*.css');
+  });
+});
+
+describe('compile error', function() {
+  it('stylus syntax error', function(done) {
+    execMiddleware('/static/source2/index.css').then(function(http) {
+      assert.equal(http.res.statusCode, 500);
+      assert.ok(
+        !think.isFile(think.RESOURCE_PATH + 'static/source2/index.css'),
+        'should not create file in static/source2/'
+      );
+      done();
+    }).catch(err => done(err));
   });
 });
