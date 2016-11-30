@@ -1,5 +1,7 @@
 # think-css-preprocess
 
+[![Build Status](https://travis-ci.org/XGHeaven/think-css-preprocess.svg?branch=master)](https://travis-ci.org/XGHeaven/think-css-preprocess)
+
 ### Install
 
 ```javascript
