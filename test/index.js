@@ -87,7 +87,7 @@ describe('compile css file in different path through set config', function() {
     Promise.resolve().then(function() {
       execMiddleware('/static/target/index.css', {
         _config: {
-          css_preprocess: {
+          'css-preprocess': {
             path: 'source1'
           }
         }
@@ -105,7 +105,7 @@ describe('compile css file in different path through set config', function() {
     Promise.resolve().then(function() {
       execMiddleware('/static/target/target1/index.css', {
         _config: {
-          css_preprocess: {
+          'css-preprocess': {
             path: ['source1', 'target/target1']
           }
         }
