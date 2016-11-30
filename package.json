@@ -49,7 +49,7 @@
     "url": "https://github.com/XGHeaven/think-css-preprocess"
   },
   "engines": {
-    "node": ">=4"
+    "node": ">=5"
   },
   "license": "MIT",
   "readmeFilename": "README.md",
