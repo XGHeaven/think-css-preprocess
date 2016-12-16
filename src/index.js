@@ -63,28 +63,38 @@ export default class extends think.middleware.base {
     return path.format(pathInfo);
   }
 
+  sourceNewDest(sourceFilePath, destFilePath) {
+    if (!think.isFile(destFilePath)) {
+      return true;
+    }
+    const sourceStats = fs.statSync(sourceFilePath);
+    const destStat = fs.statSync(destFilePath);
+    return sourceStats.mtime.getTime() > destStat.mtime.getTime();
+  }
+
   async run() {
     let url = this.http.url;
     if (path.parse(url).ext !== '.css') {
       // only compiler css file
       return 'not css';
     }
-    let oldFilePath = path.join(think.RESOURCE_PATH, url);
+    let destFilePath = path.join(think.RESOURCE_PATH, url);
     for (let name in this._compilers) {
-      let newFilePath = this.getRelativeFilePath(this._compilers[name]);
+      let sourceFilePath = this.getRelativeFilePath(this._compilers[name]);
       if (
-        !think.isFile(newFilePath) ||
-        (think.env === 'production' && !this.newThanOld(newFilePath))) {
+        !think.isFile(sourceFilePath) ||
+        (think.env === 'production' &&
+        !this.sourceNewDest(sourceFilePath, destFilePath))) {
         continue;
       }
       try {
         let compiler = this.getCompiler(name);
         let output = await new Promise((resolve, reject) => {
           return compiler
-          .renderFile(newFilePath)
+          .renderFile(sourceFilePath)
           .done(res => resolve(res.result), err => reject(err))
         });
-        await writeFile(oldFilePath, output);
+        await writeFile(destFilePath, output);
         return;
       } catch (e) {
         this.http.status(500).end(e.message);

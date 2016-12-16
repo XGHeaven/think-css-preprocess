@@ -2,6 +2,7 @@ var assert = require('assert');
 var path = require('path');
 var fs = require('fs');
 var http = require('http');
+var touch = require('touch');
 
 var rimraf = require('rimraf');
 
@@ -54,26 +55,21 @@ var execMiddlewareForResult = function(url, options) {
 };
 
 describe('default compile', function() {
-  it('compile stylus', function(done) {
-    Promise.resolve().then(function() {
-      execMiddleware('/static/stylus/index.css').then(function(http) {
-        assert.ok(think.isFile(think.RESOURCE_PATH + 'static/stylus/index.css'));
-        done();
-      }).catch(err => done(err));
+  it('compile stylus', function() {
+    return execMiddleware('/static/stylus/index.css').then(function(http) {
+      assert.ok(think.isFile(think.RESOURCE_PATH + 'static/stylus/index.css'));
     });
   });
 
-  it('not css file', function(done) {
-    execMiddlewareForResult('/static/img/index.png').then(function(result) {
+  it('not css file', function() {
+    return execMiddlewareForResult('/static/img/index.png').then(function(result) {
       assert.equal(result, 'not css');
-      done();
     });
   });
 
-  it('no match file to compile', function(done) {
-    execMiddlewareForResult('/static/css/index.css').then(function(result) {
+  it('no match file to compile', function() {
+    return execMiddlewareForResult('/static/css/index.css').then(function(result) {
       assert.equal(result, 'no match');
-      done();
     });
   });
 
@@ -83,39 +79,33 @@ describe('default compile', function() {
 });
 
 describe('compile css file in different path through set config', function() {
-  it('path = string', function(done) {
-    Promise.resolve().then(function() {
-      execMiddleware('/static/target/index.css', {
-        _config: {
-          'css-preprocess': {
-            path: 'source1'
-          }
+  it('path = string', function() {
+    return execMiddleware('/static/target/index.css', {
+      _config: {
+        'css-preprocess': {
+          path: 'source1'
         }
-      }).then(function(http) {
-        assert.ok(
-          think.isFile(think.RESOURCE_PATH + 'static/target/index.css'),
-          'file not create in static/target'
-        );
-        done()
-      }).catch(err => done(err));
+      }
+    }).then(function(http) {
+      assert.ok(
+        think.isFile(think.RESOURCE_PATH + 'static/target/index.css'),
+        'file not create in static/target'
+      );
     });
   });
 
-  it('path = array', function(done) {
-    Promise.resolve().then(function() {
-      execMiddleware('/static/target/target1/index.css', {
-        _config: {
-          'css-preprocess': {
-            path: ['source1', 'target/target1']
-          }
+  it('path = array', function() {
+    return execMiddleware('/static/target/target1/index.css', {
+      _config: {
+        'css-preprocess': {
+          path: ['source1', 'target/target1']
         }
-      }).then(function(http) {
-        assert.ok(
-          think.isFile(think.RESOURCE_PATH + 'static/target/target1/index.css'),
-          'file not create in static/target/target1'
-        );
-        done();
-      }).catch(err => done(err));
+      }
+    }).then(function(http) {
+      assert.ok(
+        think.isFile(think.RESOURCE_PATH + 'static/target/target1/index.css'),
+        'file not create in static/target/target1'
+      );
     });
   });
 
@@ -125,14 +115,58 @@ describe('compile css file in different path through set config', function() {
 });
 
 describe('compile error', function() {
-  it('stylus syntax error', function(done) {
-    execMiddleware('/static/source2/index.css').then(function(http) {
+  it('stylus syntax error', function() {
+    return execMiddleware('/static/source2/index.css').then(function(http) {
       assert.equal(http.res.statusCode, 500);
       assert.ok(
         !think.isFile(think.RESOURCE_PATH + 'static/source2/index.css'),
         'should not create file in static/source2/'
       );
-      done();
-    }).catch(err => done(err));
+    });
+  });
+});
+
+describe('production mode', function() {
+  before(function() {
+    think.env = 'production';
+  });
+
+  it('compile when source new', function() {
+    return execMiddleware('/static/target/index.css', {
+      _config: {
+        'css-preprocess': {
+          path: 'source1'
+        }
+      }
+    }).then(function(http) {
+      assert.ok(
+        think.isFile(think.RESOURCE_PATH + 'static/target/index.css'),
+        'file not create in static/target'
+      );
+      touch.sync(think.RESOURCE_PATH + 'static/source1/index.styl', {
+        mtime: true
+      });
+      rimraf.sync(think.RESOURCE_PATH + 'static/target/index.css');
+      return execMiddleware('/static/target/index.css', {
+        _config: {
+          'css-preprocess': {
+            path: 'source1'
+          }
+        }
+      });
+    }).then(function() {
+      assert.ok(
+        think.isFile(think.RESOURCE_PATH + 'static/target/index.css'),
+        'file not create when source file updated'
+      );
+    })
+  });
+
+  afterEach(function() {
+    rimraf.sync(think.RESOURCE_PATH + 'static/**/*.css');
+  });
+
+  after(function() {
+    think.env = 'testing';
   });
 });
