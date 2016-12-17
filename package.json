@@ -20,7 +20,8 @@
   "main": "lib/index.js",
   "dependencies": {
     "accord": "^0.26.3",
-    "babel-runtime": "6.x.x"
+    "babel-runtime": "6.x.x",
+    "readdir": "^0.0.13"
   },
   "devDependencies": {
     "babel-cli": "6.x.x",
