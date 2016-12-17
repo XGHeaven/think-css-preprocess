@@ -14,7 +14,7 @@ add middleware to your project
 
 ```javascript
 // in src/common/bootstrap/middleware.js
-const think_css_preprocess = require('think-css-preprocess');
+const think_css_preprocess = require('think-css-preprocess').default;
 think.middleware('css-preprogress', think_css_preprocess);
 ```
 
@@ -49,11 +49,27 @@ If `path` omitted, it find file in same directory as css file placed.
 
 For example: You request uri `/static/css/index.css`, it will search `index.{styl|less|sass}` file in `/static/css` folder.
 
-If `path` is `string`, it will search file in `/static/${path}/${resource_path}`.
+removed in v0.2.0
+~~If `path` is `string`, it will search file in `/static/${path}/${resource_path}`.~~
 
-For example:
-* `path='stylus'`, `/static/css/index/index.css` -> `/static/stylus/index/index.{styl|less|sass}`
-* `path='stylus/new'`, `/static/css/index/index.css` -> `/static/stylus/new/index.{styl|less|sass}`
+~~For example:~~
+~~* `path='stylus'`, `/static/css/index/index.css` -> `/static/stylus/index/index.{styl|less|sass}`~~
+~~* `path='stylus/new'`, `/static/css/index/index.css` -> `/static/stylus/new/index.{styl|less|sass}`~~
+
+If `path` is `array[array[string]]` with follow format:
+
+```
+[[src, dest], [src, dest], ...]
+```
+
+* `src` source folder
+* `dest` dest folder
+
+```
+[['stylus', 'css'], ['sass', 'css']]
+'/static/stylus' -> '/static/css'
+'/static/sass' -> '/static/css'
+```
 
 If `path` is `array[string]` and it's length must be 2. It just use first path to replace last path.
 
@@ -62,6 +78,15 @@ For example:
 
 > If you use window, please use `/` not `\\` as sep
 
+### Compile
+
+You only add follow code in `bin/compile.js` for auto compile css
+
+```js
+var css_pre_process = require('think-css-preprocess');
+css_pre_process.compile(RESOURCE_PATH, CONFIG).then(...);
+```
+
 ### TODO
-* [ ] support cache in production mode
-* [ ] support compile in compile script
+* [x] support cache in production mode
+* [x] support compile in compile script
